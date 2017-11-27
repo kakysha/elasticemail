@@ -2,27 +2,28 @@ package elasticemail
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/pkg/errors"
 )
 
 type sendingPermission byte
 
+// sending permission enum
 const (
-	sendingPermissionAll                 sendingPermission = 255
-	sendingPermissionHttpApi                               = 2
-	sendingPermissionHttpApiAndInterface                   = 6
-	sendingPermissionInterface                             = 4
-	sendingPermissionNone                                  = 0
-	sendingPermissionSmtp                                  = 1
-	sendingPermissionSmtpAndHttpApi                        = 3
-	sendingPermissionSmtpAndInterface                      = 5
+	SendingPermissionAll                 sendingPermission = 255
+	SendingPermissionHTTPAPI                               = 2
+	SendingPermissionHTTPAPIAndInterface                   = 6
+	SendingPermissionInterface                             = 4
+	SendingPermissionNone                                  = 0
+	SendingPermissionSMTP                                  = 1
+	SendingPermissionSMTPAndHTTPAPI                        = 3
+	SendingPermissionSMTPAndInterface                      = 5
 )
 
 // Subaccount is the JSON structure accepted by and returned from the SparkPost Subaccounts API.
 type Subaccount struct {
 	Email                  string
 	Password               string
+	ConfirmPassword        string
 	DailySendLimit         int
 	EmailSizeLimit         int // MB
 	EnableContactFeatures  bool
@@ -49,12 +50,10 @@ func (c *Client) AddSubAccountContext(ctx context.Context, s *Subaccount) (res *
 		return
 	}
 
-	// converting struct to map
-	jsonBytes, _ := json.Marshal(s)
-	var params map[string]string
-	json.Unmarshal(jsonBytes, &params)
-	params["confirmPassword"] = params["Password"]
+	if s.ConfirmPassword == "" {
+		s.ConfirmPassword = s.Password
+	}
 
-	res = c.HttpGet(ctx, "/Account/AddSubAccount", params)
+	res = c.HTTPGet(ctx, "/Account/AddSubAccount", s)
 	return
 }

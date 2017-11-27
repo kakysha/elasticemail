@@ -70,7 +70,7 @@ func (c *Client) Init(cfg *Config) error {
 	if cfg.BaseURL == "" {
 		cfg.BaseURL = "https://api.elasticemail.com"
 	} else if !strings.HasPrefix(cfg.BaseURL, "https://") {
-		return errors.New("API base url must be https!")
+		return errors.New("API base url must be https")
 	}
 	if cfg.APIVersion == 0 {
 		cfg.APIVersion = 2
@@ -85,33 +85,37 @@ func (c *Client) Init(cfg *Config) error {
 }
 
 // HttpPost sends a Post request with the provided JSON payload to the specified url.
-// Query params are supported via net/url - roll your own and stringify it.
+// Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
-func (c *Client) HttpPost(ctx context.Context, path string, params map[string]string, data []byte) *Response {
-	return c.DoRequest(ctx, "POST", path, params, data)
+func (c *Client) HTTPPost(ctx context.Context, path string, params interface{}, data []byte) *Response {
+	return c.doRequest(ctx, "POST", path, params, data)
 }
 
 // HttpGet sends a Get request to the specified url.
-// Query params are supported via net/url - roll your own and stringify it.
+// Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
-func (c *Client) HttpGet(ctx context.Context, path string, params map[string]string) *Response {
-	return c.DoRequest(ctx, "GET", path, params, nil)
+func (c *Client) HTTPGet(ctx context.Context, path string, params interface{}) *Response {
+	return c.doRequest(ctx, "GET", path, params, nil)
 }
 
-func (c *Client) DoRequest(ctx context.Context, method, path string, params map[string]string, data []byte) (res *Response) {
+func (c *Client) doRequest(ctx context.Context, method, path string, params interface{}, data []byte) (res *Response) {
 	if c == nil {
-		res.Error = errors.New("Client must be non-nil!")
+		res.Error = errors.New("Client must be non-nil")
 		return
 	} else if c.Client == nil {
-		res.Error = errors.New("Client.Client (http.Client) must be non-nil!")
+		res.Error = errors.New("Client.Client (http.Client) must be non-nil")
 		return
 	} else if c.Config == nil {
-		res.Error = errors.New("Client.Config must be non-nil!")
+		res.Error = errors.New("Client.Config must be non-nil")
 		return
 	}
 
+	jsonBytes, _ := json.Marshal(params)
+	var rawParams map[string]string
+	json.Unmarshal(jsonBytes, &rawParams)
+
 	queryParams := url.Values{}
-	for k, v := range params {
+	for k, v := range rawParams {
 		queryParams.Set(k, v)
 	}
 
