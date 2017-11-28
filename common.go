@@ -84,30 +84,27 @@ func (c *Client) Init(cfg *Config) error {
 	return nil
 }
 
-// HttpPost sends a Post request with the provided JSON payload to the specified url.
+// HTTPPost sends a Post request with the provided JSON payload to the specified url.
 // Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
 func (c *Client) HTTPPost(ctx context.Context, path string, params interface{}, data []byte) *Response {
 	return c.doRequest(ctx, "POST", path, params, data)
 }
 
-// HttpGet sends a Get request to the specified url.
+// HTTPGet sends a Get request to the specified url.
 // Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
 func (c *Client) HTTPGet(ctx context.Context, path string, params interface{}) *Response {
 	return c.doRequest(ctx, "GET", path, params, nil)
 }
 
-func (c *Client) doRequest(ctx context.Context, method, path string, params interface{}, data []byte) (res *Response) {
+func (c *Client) doRequest(ctx context.Context, method, path string, params interface{}, data []byte) *Response {
 	if c == nil {
-		res.Error = errors.New("Client must be non-nil")
-		return
+		return &Response{Error: errors.New("Client must be non-nil")}
 	} else if c.Client == nil {
-		res.Error = errors.New("Client.Client (http.Client) must be non-nil")
-		return
+		return &Response{Error: errors.New("Client.Client (http.Client) must be non-nil")}
 	} else if c.Config == nil {
-		res.Error = errors.New("Client.Config must be non-nil")
-		return
+		return &Response{Error: errors.New("Client.Config must be non-nil")}
 	}
 
 	jsonBytes, _ := json.Marshal(params)
@@ -127,11 +124,9 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params inte
 
 	req, err := http.NewRequest(method, urlStr, bytes.NewBuffer(data))
 	if err != nil {
-		res.Error = errors.Wrap(err, "building request")
-		return
+		return &Response{Error: errors.Wrap(err, "building request")}
 	}
 
-	res = &Response{}
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -161,13 +156,14 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params inte
 	}
 	req = req.WithContext(ctx)
 
+	res := &Response{}
 	res.httpResponse, res.Error = c.Client.Do(req)
 
 	if res.Error != nil {
-		return
+		return res
 	}
 	res.parseResponse()
-	return
+	return res
 }
 
 // parseResponse pulls info from JSON http responses into api.Response object.

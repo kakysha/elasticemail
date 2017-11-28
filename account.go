@@ -2,6 +2,7 @@ package elasticemail
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/pkg/errors"
 )
 
@@ -35,6 +36,7 @@ type Subaccount struct {
 	RequiresLitmusCredits  bool
 	SendActivation         bool
 	SendingPermission      sendingPermission
+	APIKey                 string
 }
 
 // AddSubAccount attempts to create a subaccount using the provided object
@@ -43,17 +45,73 @@ func (c *Client) AddSubAccount(s *Subaccount) (res *Response) {
 }
 
 // AddSubAccountContext is the same as AddSubAccount, and it allows the caller to pass in a context
-func (c *Client) AddSubAccountContext(ctx context.Context, s *Subaccount) (res *Response) {
-	// enforce required parameters
-	if s == nil {
-		res.Error = errors.New("Create called with nil Subaccount")
-		return
-	}
-
+func (c *Client) AddSubAccountContext(ctx context.Context, s *Subaccount) *Response {
 	if s.ConfirmPassword == "" {
 		s.ConfirmPassword = s.Password
 	}
 
-	res = c.HTTPGet(ctx, "/Account/AddSubAccount", s)
-	return
+	res := c.HTTPGet(ctx, "/account/addsubaccount", s)
+	if res.Success {
+		s.APIKey = res.Data.(string)
+	}
+	return res
+}
+
+// DeleteSubAccount attempts to delete subaccount using the provided params map
+// one of subAccountEmail or publicAccountID must be provided
+func (c *Client) DeleteSubAccount(params map[string]string) (res *Response) {
+	return c.DeleteSubAccountContext(context.Background(), params)
+}
+
+// DeleteSubAccountContext is the same as DeleteSubAccount, and it allows the caller to pass in a context
+func (c *Client) DeleteSubAccountContext(ctx context.Context, params map[string]string) *Response {
+	_, emailPrs := params["subAccountEmail"]
+	_, IDPrs := params["publicAccountID"]
+	if !emailPrs && !IDPrs {
+		return &Response{Error: errors.New("DeleteSubAccount called without email or ID")}
+	}
+
+	return c.HTTPGet(ctx, "/account/deletesubaccount", params)
+}
+
+// UpdateSubAccountSettings attempts to update a subaccount
+// referenced by ID from params object and with fields from Subaccount object
+func (c *Client) UpdateSubAccountSettings(s *Subaccount, params map[string]string) (res *Response) {
+	return c.UpdateSubAccountSettingsContext(context.Background(), s, params)
+}
+
+// UpdateSubAccountSettingsContext is the same as UpdateSubAccountSettings, and it allows the caller to pass in a context
+func (c *Client) UpdateSubAccountSettingsContext(ctx context.Context, s *Subaccount, params map[string]string) *Response {
+	_, emailPrs := params["subAccountEmail"]
+	_, IDPrs := params["publicAccountID"]
+	if !emailPrs && !IDPrs {
+		return &Response{Error: errors.New("UpdateSubAccountSettings called without email or ID")}
+	}
+
+	jsonBytes, _ := json.Marshal(s)
+	var rawParams map[string]string
+	json.Unmarshal(jsonBytes, &rawParams)
+
+	for k := range params {
+		rawParams[k] = params[k]
+	}
+
+	return c.HTTPGet(ctx, "/account/updatesubaccountsettings", rawParams)
+}
+
+// GetSubAccountApiKey attempts to retrieve subaccount API Key
+// one of subAccountEmail or publicAccountID must be provided
+func (c *Client) GetSubAccountApiKey(params map[string]string) (res *Response) {
+	return c.GetSubAccountApiKeyContext(context.Background(), params)
+}
+
+// GetSubAccountApiKeyContext is the same as GetSubAccountApiKey, and it allows the caller to pass in a context
+func (c *Client) GetSubAccountApiKeyContext(ctx context.Context, params map[string]string) *Response {
+	_, emailPrs := params["subAccountEmail"]
+	_, IDPrs := params["publicAccountID"]
+	if !emailPrs && !IDPrs {
+		return &Response{Error: errors.New("GetSubAccountApiKey called without email or ID")}
+	}
+
+	return c.HTTPGet(ctx, "/account/getsubaccountapikey", params)
 }
