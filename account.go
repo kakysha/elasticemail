@@ -6,21 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-type sendingPermission byte
-
-// sending permission enum
-const (
-	SendingPermissionAll                 sendingPermission = 255
-	SendingPermissionHTTPAPI                               = 2
-	SendingPermissionHTTPAPIAndInterface                   = 6
-	SendingPermissionInterface                             = 4
-	SendingPermissionNone                                  = 0
-	SendingPermissionSMTP                                  = 1
-	SendingPermissionSMTPAndHTTPAPI                        = 3
-	SendingPermissionSMTPAndInterface                      = 5
-)
-
-// Subaccount is the JSON structure accepted by and returned from the SparkPost Subaccounts API.
+// Subaccount is the JSON structure accepted by ElasticEmail Subaccounts API.
+// list of fields: https://api.elasticemail.com/public/help#Account_AddSubAccount
 type Subaccount struct {
 	Email                  string
 	Password               string
@@ -39,7 +26,23 @@ type Subaccount struct {
 	APIKey                 string
 }
 
+// sending permission enum
+// https://api.elasticemail.com/public/help#classes_SendingPermission
+type sendingPermission byte
+
+const (
+	SendingPermissionAll                 sendingPermission = 255
+	SendingPermissionHTTPAPI                               = 2
+	SendingPermissionHTTPAPIAndInterface                   = 6
+	SendingPermissionInterface                             = 4
+	SendingPermissionNone                                  = 0
+	SendingPermissionSMTP                                  = 1
+	SendingPermissionSMTPAndHTTPAPI                        = 3
+	SendingPermissionSMTPAndInterface                      = 5
+)
+
 // AddSubAccount attempts to create a subaccount using the provided object
+// https://api.elasticemail.com/public/help#Account_AddSubAccount
 func (c *Client) AddSubAccount(s *Subaccount) (res *Response) {
 	return c.AddSubAccountContext(context.Background(), s)
 }
@@ -59,6 +62,7 @@ func (c *Client) AddSubAccountContext(ctx context.Context, s *Subaccount) *Respo
 
 // DeleteSubAccount attempts to delete subaccount using the provided params map
 // one of subAccountEmail or publicAccountID must be provided
+// https://api.elasticemail.com/public/help#Account_DeleteSubAccount
 func (c *Client) DeleteSubAccount(params map[string]string) (res *Response) {
 	return c.DeleteSubAccountContext(context.Background(), params)
 }
@@ -76,6 +80,7 @@ func (c *Client) DeleteSubAccountContext(ctx context.Context, params map[string]
 
 // UpdateSubAccountSettings attempts to update a subaccount
 // referenced by ID from params object and with fields from Subaccount object
+// https://api.elasticemail.com/public/help#Account_UpdateSubAccountSettings
 func (c *Client) UpdateSubAccountSettings(s *Subaccount, params map[string]string) (res *Response) {
 	return c.UpdateSubAccountSettingsContext(context.Background(), s, params)
 }
@@ -101,6 +106,7 @@ func (c *Client) UpdateSubAccountSettingsContext(ctx context.Context, s *Subacco
 
 // GetSubAccountApiKey attempts to retrieve subaccount API Key
 // one of subAccountEmail or publicAccountID must be provided
+// https://api.elasticemail.com/public/help#Account_GetSubAccountApiKey
 func (c *Client) GetSubAccountApiKey(params map[string]string) (res *Response) {
 	return c.GetSubAccountApiKeyContext(context.Background(), params)
 }
