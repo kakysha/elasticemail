@@ -87,18 +87,18 @@ func (c *Client) Init(cfg *Config) error {
 // HTTPPost sends a Post request with the provided JSON payload to the specified url.
 // Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
-func (c *Client) HTTPPost(ctx context.Context, path string, params interface{}, data []byte) *Response {
-	return c.doRequest(ctx, "POST", path, params, data)
+func (c *Client) HTTPPost(ctx context.Context, path string, params interface{}) *Response {
+	return c.doRequest(ctx, "POST", path, params)
 }
 
 // HTTPGet sends a Get request to the specified url.
 // Query params are converted to via net/url.Values
 // Authenticate using the configured API key.
 func (c *Client) HTTPGet(ctx context.Context, path string, params interface{}) *Response {
-	return c.doRequest(ctx, "GET", path, params, nil)
+	return c.doRequest(ctx, "GET", path, params)
 }
 
-func (c *Client) doRequest(ctx context.Context, method, path string, params interface{}, data []byte) *Response {
+func (c *Client) doRequest(ctx context.Context, method string, path string, params interface{}) *Response {
 	if c == nil {
 		return &Response{Error: errors.New("Client must be non-nil")}
 	} else if c.Client == nil {
@@ -111,27 +111,35 @@ func (c *Client) doRequest(ctx context.Context, method, path string, params inte
 	var rawParams map[string]string
 	json.Unmarshal(jsonBytes, &rawParams)
 
-	queryParams := url.Values{}
+	requestParams := url.Values{}
 	for k, v := range rawParams {
-		queryParams.Set(k, v)
+		requestParams.Set(k, v)
 	}
 
-	if queryParams.Get("apikey") == "" {
-		queryParams.Set("apikey", c.Config.APIKey)
+	if requestParams.Get("apikey") == "" {
+		if apikey, ok := ctx.Value("apikey").(string); ok {
+			requestParams.Set("apikey", apikey)
+		} else {
+			requestParams.Set("apikey", c.Config.APIKey)
+		}
 	}
 
-	var urlStr = fmt.Sprintf("%s/v%d/%s?%s", c.Config.BaseURL, c.Config.APIVersion, path, queryParams.Encode())
+	var getParams, postParams string
+	if method == "GET" {
+		getParams = requestParams.Encode()
+	} else {
+		postParams = requestParams.Encode()
+	}
 
-	req, err := http.NewRequest(method, urlStr, bytes.NewBuffer(data))
+	var urlStr = fmt.Sprintf("%s/v%d/%s?%s", c.Config.BaseURL, c.Config.APIVersion, path, getParams)
+
+	req, err := http.NewRequest(method, urlStr, strings.NewReader(postParams))
 	if err != nil {
 		return &Response{Error: errors.Wrap(err, "building request")}
 	}
 
-	if data != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
 	req.Header.Set("User-Agent", fmt.Sprintf("ElasticEmail Go API Client v%d", c.Config.APIVersion))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	// Forward additional headers set in client to request
 	if c.Headers != nil {

@@ -16,7 +16,6 @@ type Email struct {
 	EncodingType      encodingType `json:",omitempty"`
 	From              string       `json:",omitempty"`
 	FromName          string       `json:",omitempty"`
-	Headers           string       `json:",omitempty"`
 	IsTransactional   bool         `json:",omitempty"`
 	Lists             string       `json:",omitempty"`
 	Merge             string       `json:",omitempty"`
@@ -36,7 +35,6 @@ type Email struct {
 	Template          string       `json:",omitempty"`
 	TimeOffSetMinutes string       `json:",omitempty"`
 	To                string       `json:",omitempty"`
-	File              []byte       `json:"-"`
 }
 
 type encodingType byte
@@ -53,13 +51,35 @@ const (
 	EncodingTypeUue                          = 5
 )
 
-// Send attempts to send provided email object
+// Send submits email. The default, maximum (accepted by us) size of an email is 10 MB in total, with or without attachments included.
 // https://api.elasticemail.com/public/help#Email_Send
-func (c *Client) Send(e *Email) (res *Response) {
+func (c *Client) Send(e *Email) *Response {
 	return c.SendContext(context.Background(), e)
 }
 
 // SendContext is the same as Send, and it allows the caller to pass in a context
 func (c *Client) SendContext(ctx context.Context, e *Email) *Response {
-	return c.HTTPPost(ctx, "/email/send", e, e.File)
+	return c.HTTPPost(ctx, "email/send", e)
+}
+
+// Status retrieves detailed status of a unique email sent through your account. Returns a 'Email has expired and the status is unknown.' error, if the email has not been fully processed yet.
+// https://api.elasticemail.com/public/help#Email_Send
+func (c *Client) Status(messageID string) *Response {
+	return c.StatusContext(context.Background(), messageID)
+}
+
+// StatusContext is the same as Status, and it allows the caller to pass in a context
+func (c *Client) StatusContext(ctx context.Context, messageID string) *Response {
+	return c.HTTPGet(ctx, "email/status", map[string]string{"messageID": messageID})
+}
+
+// View retrieves email content (public, no API key required)
+// https://api.elasticemail.com/public/help#classes_EmailView
+func (c *Client) View(messageID string) *Response {
+	return c.ViewContext(context.Background(), messageID)
+}
+
+// ViewContext is the same as View, and it allows the caller to pass in a context
+func (c *Client) ViewContext(ctx context.Context, messageID string) *Response {
+	return c.HTTPGet(ctx, "email/view", map[string]string{"messageID": messageID})
 }

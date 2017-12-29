@@ -41,9 +41,9 @@ const (
 	SendingPermissionSMTPAndInterface                      = 5
 )
 
-// AddSubAccount attempts to create a subaccount using the provided object
+// AddSubAccount create new subaccount and provide most important data about it.
 // https://api.elasticemail.com/public/help#Account_AddSubAccount
-func (c *Client) AddSubAccount(s *Subaccount) (res *Response) {
+func (c *Client) AddSubAccount(s *Subaccount) *Response {
 	return c.AddSubAccountContext(context.Background(), s)
 }
 
@@ -53,17 +53,17 @@ func (c *Client) AddSubAccountContext(ctx context.Context, s *Subaccount) *Respo
 		s.ConfirmPassword = s.Password
 	}
 
-	res := c.HTTPGet(ctx, "/account/addsubaccount", s)
+	res := c.HTTPGet(ctx, "account/addsubaccount", s)
 	if res.Success {
 		s.APIKey = res.Data.(string)
 	}
 	return res
 }
 
-// DeleteSubAccount attempts to delete subaccount using the provided params map
+// DeleteSubAccount deletes specified Subaccount
 // one of subAccountEmail or publicAccountID must be provided
 // https://api.elasticemail.com/public/help#Account_DeleteSubAccount
-func (c *Client) DeleteSubAccount(params map[string]string) (res *Response) {
+func (c *Client) DeleteSubAccount(params map[string]string) *Response {
 	return c.DeleteSubAccountContext(context.Background(), params)
 }
 
@@ -75,13 +75,12 @@ func (c *Client) DeleteSubAccountContext(ctx context.Context, params map[string]
 		return &Response{Error: errors.New("DeleteSubAccount called without email or ID")}
 	}
 
-	return c.HTTPGet(ctx, "/account/deletesubaccount", params)
+	return c.HTTPGet(ctx, "account/deletesubaccount", params)
 }
 
-// UpdateSubAccountSettings attempts to update a subaccount
-// referenced by ID from params object and with fields from Subaccount object
+// UpdateSubAccountSettings updates fields from Subaccount object of specified subaccount referenced by ID from params map
 // https://api.elasticemail.com/public/help#Account_UpdateSubAccountSettings
-func (c *Client) UpdateSubAccountSettings(s *Subaccount, params map[string]string) (res *Response) {
+func (c *Client) UpdateSubAccountSettings(s *Subaccount, params map[string]string) *Response {
 	return c.UpdateSubAccountSettingsContext(context.Background(), s, params)
 }
 
@@ -101,13 +100,13 @@ func (c *Client) UpdateSubAccountSettingsContext(ctx context.Context, s *Subacco
 		rawParams[k] = params[k]
 	}
 
-	return c.HTTPGet(ctx, "/account/updatesubaccountsettings", rawParams)
+	return c.HTTPGet(ctx, "account/updatesubaccountsettings", rawParams)
 }
 
 // GetSubAccountAPIKey attempts to retrieve subaccount API Key
 // one of subAccountEmail or publicAccountID must be provided
 // https://api.elasticemail.com/public/help#Account_GetSubAccountApiKey
-func (c *Client) GetSubAccountAPIKey(params map[string]string) (res *Response) {
+func (c *Client) GetSubAccountAPIKey(params map[string]string) *Response {
 	return c.GetSubAccountAPIKeyContext(context.Background(), params)
 }
 
@@ -119,5 +118,5 @@ func (c *Client) GetSubAccountAPIKeyContext(ctx context.Context, params map[stri
 		return &Response{Error: errors.New("GetSubAccountAPIKey called without email or ID")}
 	}
 
-	return c.HTTPGet(ctx, "/account/getsubaccountapikey", params)
+	return c.HTTPGet(ctx, "account/getsubaccountapikey", params)
 }
