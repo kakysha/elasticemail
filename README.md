@@ -1,4 +1,4 @@
-Partially implemented ElastiEmail API in Go. Currently implemented all Email methods and methods to work with Subaccounts. Methods are named identical to the API: https://api.elasticemail.com/public/help#Email_header.
+Partially implemented ElasticEmail API in Go. Currently implemented all Email methods and methods to work with Subaccounts. Methods are named identical to the API: https://api.elasticemail.com/public/help#Email_header.
 
 ### Installing
 
